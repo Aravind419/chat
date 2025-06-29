@@ -1,75 +1,94 @@
-const socket = io();
+const socket = io({
+  transports: ["websocket", "polling"],
+  timeout: 20000,
+  forceNew: true,
+});
 
+// Connection status handling
+socket.on("connect", () => {
+  console.log("✅ Connected to MinimalChat server");
+});
+
+socket.on("connect_error", (error) => {
+  console.error("❌ Connection error:", error);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("👋 Disconnected:", reason);
+});
+
+// DOM elements
 const messagesDiv = document.getElementById("messages");
 const chatForm = document.getElementById("chat-form");
 const usernameInput = document.getElementById("username");
 const messageInput = document.getElementById("message");
-const groupList = document.getElementById("group-list");
-const currentGroupHeader = document.getElementById("current-group");
-const createGroupForm = document.getElementById("create-group-form");
-const newGroupNameInput = document.getElementById("new-group-name");
 
-let currentGroupId = null;
-let username = "";
+let currentUsername = "";
 
-function renderGroups(groups) {
-  groupList.innerHTML = "";
-  groups.forEach((group) => {
-    const li = document.createElement("li");
-    li.textContent = group.name;
-    li.dataset.id = group._id;
-    if (group._id === currentGroupId) li.classList.add("active");
-    li.onclick = () => selectGroup(group._id, group.name);
-    groupList.appendChild(li);
-  });
+// Format timestamp
+function formatTime(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function selectGroup(groupId, groupName) {
-  currentGroupId = groupId;
-  currentGroupHeader.textContent = groupName;
-  Array.from(groupList.children).forEach((li) => {
-    li.classList.toggle("active", li.dataset.id === groupId);
-  });
-  messagesDiv.innerHTML = "";
-  socket.emit("join group", groupId);
-}
-
+// Create and append message
 function appendMessage(msg) {
-  const div = document.createElement("div");
-  const isMe = msg.username === usernameInput.value.trim();
-  div.classList.add("msg", isMe ? "me" : "other");
-  div.innerHTML = `<span class="user">${msg.username}</span><span class="text">${msg.message}</span>`;
-  messagesDiv.appendChild(div);
+  const messageDiv = document.createElement("div");
+  const isOwnMessage = msg.username === currentUsername;
+
+  messageDiv.className = `message ${isOwnMessage ? "own" : "other"}`;
+
+  messageDiv.innerHTML = `
+    <div class="message-info">
+      <span class="username">${msg.username}</span>
+      <span class="timestamp">${formatTime(msg.timestamp)}</span>
+    </div>
+    <div class="message-bubble">${msg.message}</div>
+  `;
+
+  messagesDiv.appendChild(messageDiv);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-socket.on("group list", (groups) => {
-  renderGroups(groups);
-});
-
-socket.on("chat history", (msgs) => {
+// Handle chat history
+socket.on("chat history", (messages) => {
+  console.log("📚 Loading chat history:", messages.length, "messages");
   messagesDiv.innerHTML = "";
-  msgs.forEach(appendMessage);
+  messages.forEach(appendMessage);
 });
 
+// Handle new message
 socket.on("chat message", (msg) => {
+  console.log("📨 New message:", msg.username, ":", msg.message);
   appendMessage(msg);
 });
 
+// Handle form submission
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  username = usernameInput.value.trim();
+
+  const username = usernameInput.value.trim();
   const message = messageInput.value.trim();
-  if (!username || !message || !currentGroupId) return;
-  socket.emit("chat message", { username, message, groupId: currentGroupId });
+
+  if (!username || !message) {
+    alert("Please enter both your name and a message");
+    return;
+  }
+
+  // Store username for message styling
+  currentUsername = username;
+
+  console.log("📤 Sending message:", { username, message });
+
+  // Send message via Socket.IO
+  socket.emit("chat message", { username, message });
+
+  // Clear message input and focus
   messageInput.value = "";
   messageInput.focus();
 });
 
-createGroupForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const groupName = newGroupNameInput.value.trim();
-  if (!groupName) return;
-  socket.emit("create group", groupName);
-  newGroupNameInput.value = "";
+// Auto-focus on message input when page loads
+document.addEventListener("DOMContentLoaded", () => {
+  messageInput.focus();
 });

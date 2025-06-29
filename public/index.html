@@ -3,42 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WhatsApp-like Chat App</title>
+    <title>MinimalChat - Lightweight Real-Time Chat</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="app-container">
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <h2>Groups</h2>
-          <form id="create-group-form">
-            <input
-              id="new-group-name"
-              type="text"
-              placeholder="New group name"
-              required />
-            <button type="submit">+</button>
-          </form>
-        </div>
-        <ul id="group-list"></ul>
-      </aside>
-      <main class="chat-main">
-        <header class="chat-header">
-          <h3 id="current-group">Select a group</h3>
-        </header>
-        <div id="messages" class="messages"></div>
-        <form id="chat-form" class="chat-form">
-          <input id="username" type="text" placeholder="Username" required />
-          <input
-            id="message"
-            type="text"
-            placeholder="Type a message..."
-            autocomplete="off"
-            required />
-          <button type="submit">Send</button>
-        </form>
-      </main>
+    <div class="chat-container">
+      <header class="chat-header">
+        <h1>💬 MinimalChat</h1>
+        <p>Lightweight real-time messaging</p>
+      </header>
+
+      <div id="messages" class="messages"></div>
+
+      <form id="chat-form" class="chat-form">
+        <input id="username" type="text" placeholder="Your name" required />
+        <input
+          id="message"
+          type="text"
+          placeholder="Type a message..."
+          autocomplete="off"
+          required />
+        <button type="submit">Send</button>
+      </form>
     </div>
+
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="script.js"></script>
   </body>
